@@ -1,0 +1,79 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Configuration;
+using System.IO;
+using System.Diagnostics;
+
+namespace ConsoleApp1
+{
+    class Program
+    {
+        static int[] total = new int[100];
+
+        static void Main(string[] args)
+        {
+
+            string path = @"C:\temp\Browserstack\";
+
+            string[] fileEntries = Directory.GetFiles(path);
+            
+           
+            int countOfFiles = fileEntries.Count();
+            int threadCount = 3;
+
+            Task[] tasks = new Task[countOfFiles];
+            for (int i = 0; i < countOfFiles; i = i + threadCount)
+            {
+                for (int j = 0; j < threadCount; j++)
+                {
+                    if (fileEntries.Length > (i+j))
+                    {
+                        //Console.WriteLine("value: "+ (i+j));
+                        int fileno = i + j;
+                        Task task1  = new Task(delegate { total[fileno] = ProcessFile(fileEntries[fileno], Task.CurrentId); });
+                        tasks[fileno]= task1;
+                        task1.Start();
+                    }
+                }
+            }
+            Process.GetCurrentProcess().Refresh();
+            Console.WriteLine("Total Running threads: " + Process.GetCurrentProcess().Threads.Count);
+            Task.WaitAll(tasks);
+            
+            Console.WriteLine("Total Sum of all files: " + total.Sum());
+
+            Console.ReadLine();
+        }
+
+
+        public static int ProcessFile(string fileName, int? threadID)
+        {
+
+            string[] numbers= new string[100];
+            using (var reader = new StreamReader(fileName))
+            {
+                string line;
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    //Console.WriteLine(line);
+                    numbers = line.Split(' ');
+                }
+            }
+            Thread.Sleep(5000);
+            int total = 0;
+            foreach (var item in numbers)
+            {
+                if (item!=""&& item !=null)
+                    total = total + Int32.Parse(item);
+            }
+            Console.WriteLine("Total from file: " + fileName + " : " + total + " in thread: " + threadID);
+            return total;
+        }
+
+    }
+}
